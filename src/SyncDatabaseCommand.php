@@ -95,7 +95,7 @@ class SyncDatabaseCommand extends Command
 
         $filename = 'toyi-sync-database-'.md5(uniqid(rand(), true)).'.sql';
         $dump_file_remote = '/tmp/' . $filename;
-        $dump_file_local = '/tmp/' . $filename;
+        $dump_file_local = '/tmp/local-' . $filename;
         $dump_file_remote_gz = $dump_file_remote . '.gz';
         $dump_file_local_gz = $dump_file_local . '.gz';
 
