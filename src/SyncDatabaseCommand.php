@@ -146,7 +146,9 @@ class SyncDatabaseCommand extends Command
         $bar->setOverwrite(true);
 
         $sftp_client->get($dump_file_remote_gz, $dump_file_local_gz, 0, -1, function ($size) use ($bar) {
-            $bar->setProgress(str_replace('MB', '', Metric::bytes($size)->format('MB')));
+            $size = str_replace(',', '.', $size);
+            $size = str_replace('MB', '', Metric::bytes($size)->format('MB'));
+            $bar->setProgress((float) $size);
         });
 
         $bar->finish();
