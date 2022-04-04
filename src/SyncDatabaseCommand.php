@@ -22,6 +22,7 @@ class SyncDatabaseCommand extends Command
      * @var string
      */
     protected $signature = 'toyi:sync-database 
+    {--keep-definers : Do not remove DEFINER clauses}
     {--no-migrations : Do not execute pending migrations.}
     {--tables-no-data= : A comma separated list of tables. Only their structure will be dumped (no data)}
     ';
@@ -93,7 +94,7 @@ class SyncDatabaseCommand extends Command
         $tables_no_data_e = array_filter(explode(',', $tables_no_data));
         $tables_no_data_e = array_filter($tables_no_data_e);
 
-        $filename = 'toyi-sync-database-'.md5(uniqid(rand(), true)).'.sql';
+        $filename = 'toyi-sync-database-' . md5(uniqid(rand(), true)) . '.sql';
         $dump_file_remote = '/tmp/' . $filename;
         $dump_file_local = '/tmp/local-' . $filename;
         $dump_file_remote_gz = $dump_file_remote . '.gz';
@@ -116,6 +117,9 @@ class SyncDatabaseCommand extends Command
         }
 
         $dump_cmd[] = $database_config['name'];
+        if ($this->option('keep-definers') !== true) {
+            $dump_cmd[] = "| sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' ";
+        }
         $dump_cmd[] = '> ' . $dump_file_remote;
         $dump_cmds[] = implode(' ', $dump_cmd);
 
@@ -130,6 +134,7 @@ class SyncDatabaseCommand extends Command
 
         $this->info("Dumping...");
         foreach ($dump_cmds as $dump_cmd) {
+            $this->info($dump_cmd);
             $ssh_client->exec($dump_cmd);
         }
 
@@ -140,15 +145,15 @@ class SyncDatabaseCommand extends Command
         $size = $sftp_client->filesize($dump_file_remote_gz);
         $size_mb = str_replace('MB', '', Metric::bytes($size)->format('MB'));
 
-        $this->info('Remote file '.$dump_file_remote_gz.' ('.$size_mb.'MB) will be downloaded.');
+        $this->info('Remote file ' . $dump_file_remote_gz . ' (' . $size_mb . 'MB) will be downloaded.');
 
-        $bar = $this->getOutput()->createProgressBar((float) $size_mb);
+        $bar = $this->getOutput()->createProgressBar((float)$size_mb);
         $bar->setOverwrite(true);
 
         $sftp_client->get($dump_file_remote_gz, $dump_file_local_gz, 0, -1, function ($size) use ($bar) {
             $size = str_replace(',', '.', $size);
             $size = str_replace('MB', '', Metric::bytes($size)->format('MB'));
-            $bar->setProgress((float) $size);
+            $bar->setProgress((float)$size);
         });
 
         $bar->finish();
