@@ -134,7 +134,6 @@ class SyncDatabaseCommand extends Command
 
         $this->info("Dumping...");
         foreach ($dump_cmds as $dump_cmd) {
-            $this->info($dump_cmd);
             $ssh_client->exec($dump_cmd);
         }
 
