@@ -16,6 +16,8 @@ class SyncDatabaseCommand extends Command
 {
     use ConfirmableTrait;
 
+    protected $delete_local_dump = true;
+
     /**
      * The name and signature of the console command.
      *
@@ -25,6 +27,8 @@ class SyncDatabaseCommand extends Command
     {--keep-definers : Do not remove DEFINER clauses}
     {--no-migrations : Do not execute pending migrations.}
     {--tables-no-data= : A comma separated list of tables. Only their structure will be dumped (no data)}
+    {--dump-file= : Directly import the database from this file}
+    {--delete-local-dump : Delete the local dump after the import is completed}
     ';
 
     /**
@@ -46,6 +50,58 @@ class SyncDatabaseCommand extends Command
             return 1;
         }
 
+        $this->delete_local_dump = $this->option('delete-local-dump', true);
+
+        $dump_file = $this->option('dump-file') ? $this->providedDump() : $this->remoteDump();
+
+        DB::connection()->getSchemaBuilder()->dropAllTables();
+        $this->info("Importing...");
+        $default_config = Config::get('database.connections.' . DB::getDefaultConnection());
+        $import_cmd = [];
+        $import_cmd[] = 'mysql';
+        $import_cmd[] = '-h ' . $default_config['host'];
+        $import_cmd[] = '-P ' . $default_config['port'];
+        $import_cmd[] = '-u ' . $default_config['username'];
+        $import_cmd[] = '-p' . $default_config['password'];
+        $import_cmd[] = $default_config['database'];
+        $import_cmd[] = ' < ' . $dump_file;
+        $import_cmd = implode(' ', $import_cmd);
+        exec($import_cmd);
+
+        if ($this->delete_local_dump) {
+            exec('rm ' . $dump_file, $output, $code);
+            $this->info("Local dump deleted.");
+        }
+
+        if ($this->option('no-migrations') !== true) {
+            $this->call('migrate', [
+                '--step' => true
+            ]);
+        }
+
+        return 0;
+    }
+
+    protected function providedDump()
+    {
+        $this->delete_local_dump = $this->option('delete-local-dump', false);
+
+        $dump_file = $this->option('dump-file');
+
+        if (file_exists($dump_file) === false) {
+            throw new Exception("File $dump_file not found.");
+        }
+
+        if (substr($dump_file, -3) === '.gz') {
+            exec("gzip -d $dump_file");
+            $dump_file = substr($dump_file, 0, strlen($dump_file) - 3);
+        }
+
+        return $dump_file;
+    }
+
+    protected function remoteDump()
+    {
         $database_config = Config::get('sync-database.database');
         $ssh_config = Config::get('sync-database.ssh');
 
@@ -162,32 +218,8 @@ class SyncDatabaseCommand extends Command
         $this->info("Remote dump deleted.");
 
         exec("gzip -d $dump_file_local_gz");
-        $this->info("Local dump extracted.");
+        $this->info("Dump extracted.");
 
-        DB::connection()->getSchemaBuilder()->dropAllTables();
-        $this->info("Importing...");
-        $default_config = Config::get('database.connections.' . DB::getDefaultConnection());
-        $import_cmd = [];
-        $import_cmd[] = 'mysql';
-        $import_cmd[] = '-h ' . $default_config['host'];
-        $import_cmd[] = '-P ' . $default_config['port'];
-        $import_cmd[] = '-u ' . $default_config['username'];
-        $import_cmd[] = '-p' . $default_config['password'];
-        $import_cmd[] = $default_config['database'];
-        $import_cmd[] = ' < ' . $dump_file_local;
-        $import_cmd = implode(' ', $import_cmd);
-        exec($import_cmd);
-        exec('rm ' . $dump_file_local, $output, $code);
-
-
-        $this->info("Local dump deleted.");
-
-        if ($this->option('no-migrations') !== true) {
-            $this->call('migrate', [
-                '--step' => true
-            ]);
-        }
-
-        return 0;
+        return $dump_file_local;
     }
 }
