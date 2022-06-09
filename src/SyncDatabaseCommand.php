@@ -230,17 +230,18 @@ class SyncDatabaseCommand extends Command
 
     protected function dropAllTables()
     {
-        try {
-            // Not available in Laravel < 5.5
-            DB::connection()->getSchemaBuilder()->dropAllTables();
-        } catch (FatalThrowableError $e) {
-            Schema::disableForeignKeyConstraints();
-            foreach (\DB::select('SHOW TABLES') as $table) {
-                $table = array_values((array)$table)[0];
-                $table = substr($table, strlen($this->default_database_config['prefix']), strlen($table));
-                Schema::drop($table);
-            }
-            Schema::enableForeignKeyConstraints();
+        $schema_builder = DB::connection()->getSchemaBuilder();
+        if (method_exists($schema_builder, 'dropAllTables')) {
+            $schema_builder->dropAllTables();
+            return;
         }
+
+        Schema::disableForeignKeyConstraints();
+        foreach (DB::select('SHOW TABLES') as $table) {
+            $table = array_values((array)$table)[0];
+            $table = substr($table, strlen($this->default_database_config['prefix']), strlen($table));
+            Schema::drop($table);
+        }
+        Schema::enableForeignKeyConstraints();
     }
 }
