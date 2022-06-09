@@ -98,7 +98,7 @@ class SyncDatabaseCommand extends Command
         }
 
         if (substr($dump_file, -3) === '.gz') {
-            exec("gzip -d $dump_file");
+            exec("gzip -fd $dump_file");
             $dump_file = substr($dump_file, 0, strlen($dump_file) - 3);
         }
 
@@ -222,7 +222,7 @@ class SyncDatabaseCommand extends Command
         $ssh_client->exec('rm ' . $dump_file_remote_gz);
         $this->info("Remote dump deleted.");
 
-        exec("gzip -d $dump_file_local_gz");
+        exec("gzip -fd $dump_file_local_gz");
         $this->info("Dump extracted.");
 
         return $dump_file_local;
