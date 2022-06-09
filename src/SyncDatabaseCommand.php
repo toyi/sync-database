@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Schema;
 use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Net\SFTP;
 use phpseclib3\Net\SSH2;
-use Symfony\Component\Debug\Exception\FatalThrowableError;
 
 class SyncDatabaseCommand extends Command
 {
@@ -152,7 +151,7 @@ class SyncDatabaseCommand extends Command
             return 1;
         }
 
-        $tables_no_data = $this->option('tables-no-data') ?: '';
+        $tables_no_data = $this->option('tables-no-data') ?: $database_config['tables_no_data'];
         $tables_no_data = str_replace(' ', '', $tables_no_data);
         $tables_no_data_e = array_filter(explode(',', $tables_no_data));
         $tables_no_data_e = array_filter($tables_no_data_e);

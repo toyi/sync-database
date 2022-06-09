@@ -18,5 +18,6 @@
         'user' => env('SYNC_DATABASE_USER'),
         'password' => env('SYNC_DATABASE_PASSWORD'),
         'max_allowed_packet' => env('SYNC_DATABASE_MAX_ALLOWED_PACKET', '64M'),
+        'tables_no_data' => env('SYNC_TABLES_NO_DATA', ''),
     ]
 ];
