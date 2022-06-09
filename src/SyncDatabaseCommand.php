@@ -8,15 +8,18 @@ use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Net\SFTP;
 use phpseclib3\Net\SSH2;
+use Symfony\Component\Debug\Exception\FatalThrowableError;
 
 class SyncDatabaseCommand extends Command
 {
     use ConfirmableTrait;
 
     protected $delete_local_dump = true;
+    protected $default_database_config = [];
 
     /**
      * The name and signature of the console command.
@@ -53,17 +56,20 @@ class SyncDatabaseCommand extends Command
         $this->delete_local_dump = $this->option('delete-local-dump', true);
 
         $dump_file = $this->option('dump-file') ? $this->providedDump() : $this->remoteDump();
+        $this->default_database_config = Config::get('database.connections.' . DB::getDefaultConnection());
 
-        DB::connection()->getSchemaBuilder()->dropAllTables();
+        $this->dropAllTables();
+
+
         $this->info("Importing...");
-        $default_config = Config::get('database.connections.' . DB::getDefaultConnection());
+
         $import_cmd = [];
         $import_cmd[] = 'mysql';
-        $import_cmd[] = '-h ' . $default_config['host'];
-        $import_cmd[] = '-P ' . $default_config['port'];
-        $import_cmd[] = '-u ' . $default_config['username'];
-        $import_cmd[] = '-p' . $default_config['password'];
-        $import_cmd[] = $default_config['database'];
+        $import_cmd[] = '-h ' . $this->default_database_config['host'];
+        $import_cmd[] = '-P ' . $this->default_database_config['port'];
+        $import_cmd[] = '-u ' . $this->default_database_config['username'];
+        $import_cmd[] = '-p' . $this->default_database_config['password'];
+        $import_cmd[] = $this->default_database_config['database'];
         $import_cmd[] = ' < ' . $dump_file;
         $import_cmd = implode(' ', $import_cmd);
         exec($import_cmd);
@@ -221,5 +227,21 @@ class SyncDatabaseCommand extends Command
         $this->info("Dump extracted.");
 
         return $dump_file_local;
+    }
+
+    protected function dropAllTables()
+    {
+        try {
+            // Not available in Laravel < 5.5
+            DB::connection()->getSchemaBuilder()->dropAllTables();
+        } catch (FatalThrowableError $e) {
+            Schema::disableForeignKeyConstraints();
+            foreach (\DB::select('SHOW TABLES') as $table) {
+                $table = array_values((array)$table)[0];
+                $table = substr($table, strlen($this->default_database_config['prefix']), strlen($table));
+                Schema::drop($table);
+            }
+            Schema::enableForeignKeyConstraints();
+        }
     }
 }
