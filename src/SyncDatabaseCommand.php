@@ -60,7 +60,6 @@ class SyncDatabaseCommand extends Command
 
         $this->dropAllTables();
 
-
         $this->info("Importing...");
 
         $import_cmd = [];
