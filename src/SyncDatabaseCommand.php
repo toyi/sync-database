@@ -65,7 +65,9 @@ class SyncDatabaseCommand extends Command
         $import_cmd = [];
         $import_cmd[] = 'mysql';
         $import_cmd[] = '-h ' . $this->default_database_config['host'];
-        $import_cmd[] = '-P ' . $this->default_database_config['port'];
+        if (array_key_exists('port', $this->default_database_config)) {
+            $import_cmd[] = '-P ' . $this->default_database_config['port'];
+        }
         $import_cmd[] = '-u ' . $this->default_database_config['username'];
         $import_cmd[] = '-p' . $this->default_database_config['password'];
         $import_cmd[] = $this->default_database_config['database'];
