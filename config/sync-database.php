@@ -1,5 +1,8 @@
 <?php return [
-
+    'auto' => [
+      'enabled' => env('SYNC_AUTO', false),
+      'at' => env('SYNC_AUTO_AT', '06:10')
+    ],
     # Remote server configuration
     'ssh' => [
         'host' => env('SYNC_SSH_HOST'),
