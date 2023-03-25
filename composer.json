@@ -22,7 +22,7 @@
         }
     },
     "require": {
-        "illuminate/console": "5 - 9",
+        "illuminate/console": ">=9",
         "phpseclib/phpseclib": "^3.0",
         "gabrielelana/byte-units": "^0.5.0"
     }
