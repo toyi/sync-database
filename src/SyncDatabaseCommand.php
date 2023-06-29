@@ -110,6 +110,7 @@ class SyncDatabaseCommand extends Command
     {
         $database_config = Config::get('sync-database.database');
         $ssh_config = Config::get('sync-database.ssh');
+        $bin_config = Config::get('sync-database.bin');
 
         if (!isset($ssh_config['timeout'])) {
             $ssh_config['timeout'] = 300;
@@ -164,7 +165,7 @@ class SyncDatabaseCommand extends Command
 
         $dump_cmds = [];
         $dump_cmd_base = [];
-        $dump_cmd_base[] = 'mysqldump';
+        $dump_cmd_base[] = $bin_config['mysqldump'] ?? 'mysqldump';
         $dump_cmd_base[] = '--max_allowed_packet=' . $database_config['max_allowed_packet'];
         $dump_cmd_base[] = '--no-tablespaces';
         $dump_cmd_base[] = '-h ' . $database_config['host'];
