@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Net\SFTP;
 use phpseclib3\Net\SSH2;
+use Symfony\Component\Process\Process;
 
 class SyncDatabaseCommand extends Command
 {
@@ -52,7 +53,7 @@ class SyncDatabaseCommand extends Command
             return 1;
         }
 
-        $this->delete_local_dump = $this->option('delete-local-dump', true);
+        $this->delete_local_dump = $this->option('delete-local-dump');
 
         $dump_file = $this->option('dump-file') ? $this->providedDump() : $this->remoteDump();
         $this->default_database_config = Config::get('database.connections.' . DB::getDefaultConnection());
@@ -61,7 +62,23 @@ class SyncDatabaseCommand extends Command
 
         $this->info("Importing...");
 
+        exec('which pv', $output, $code);
+
+        $has_pv = $code === 0;
+
+        if (!$has_pv) {
+            $this->warn("The pv binary has not been found. Install it to see the import progress bar.");
+        }
+
         $import_cmd = [];
+
+        if ($has_pv) {
+            $import_cmd[] = 'pv';
+            $import_cmd[] = '-n';
+            $import_cmd[] = $dump_file;
+            $import_cmd[] = '|';
+        }
+
         $import_cmd[] = 'mysql';
         $import_cmd[] = '-h ' . $this->default_database_config['host'];
         if (array_key_exists('port', $this->default_database_config)) {
@@ -70,9 +87,44 @@ class SyncDatabaseCommand extends Command
         $import_cmd[] = '-u ' . $this->default_database_config['username'];
         $import_cmd[] = '-p' . $this->default_database_config['password'];
         $import_cmd[] = $this->default_database_config['database'];
-        $import_cmd[] = ' < ' . $dump_file;
-        $import_cmd = implode(' ', $import_cmd);
-        exec($import_cmd);
+
+        if (!$has_pv) {
+            $import_cmd[] = '<';
+            $import_cmd[] = $dump_file;
+        }
+
+        $import_cmd[] = '2>&1';
+
+        $bar = $this->output->createProgressBar(100);
+
+        $process = new Process(['bash', '-c', implode(' ', $import_cmd)]);
+        $process->setTimeout(null);
+
+        $process->run(function ($type, $buffer) use ($bar) {
+            $lines = explode("\n", $buffer);
+            $lines = array_filter($lines, fn(string $line) => $line !== '');
+            $buffer = $lines[0];
+
+            if(str_starts_with($buffer, 'mysql: [Warning] Using a password')){
+                return;
+            }
+
+            if (!is_numeric($buffer)) {
+                $this->warn($buffer);
+                return;
+            }
+
+            $bar->setProgress((int) $buffer);
+        });
+
+        if (!$process->isSuccessful()) {
+            $this->error("There was an error during the import.");
+            return Command::FAILURE;
+        }
+
+        if ($has_pv) {
+            $bar->finish();
+        }
 
         if ($this->delete_local_dump) {
             exec('rm ' . $dump_file, $output, $code);
