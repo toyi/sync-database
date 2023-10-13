@@ -26,7 +26,7 @@ class SyncDatabaseCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'toyi:sync-database 
+    protected $signature = 'toyi:sync-database
     {--keep-definers : Do not remove DEFINER clauses}
     {--no-migrations : Do not execute pending migrations.}
     {--tables-no-data= : A comma separated list of tables. Only their structure will be dumped (no data)}
@@ -79,7 +79,7 @@ class SyncDatabaseCommand extends Command
             $import_cmd[] = '|';
         }
 
-        $import_cmd[] = Config::get('sync-database.bin.mysql', 'mysql');
+        $import_cmd[] = Config::get('sync-database.bin.mysql') ?: 'mysql';
         $import_cmd[] = '-h ' . $this->default_database_config['host'];
         if (array_key_exists('port', $this->default_database_config)) {
             $import_cmd[] = '-P ' . $this->default_database_config['port'];
@@ -216,7 +216,7 @@ class SyncDatabaseCommand extends Command
 
         $dump_cmds = [];
         $dump_cmd_base = [];
-        $dump_cmd_base[] =  Config::get('sync-database.bin.mysqldump', 'mysqldump');
+        $dump_cmd_base[] =  Config::get('sync-database.bin.mysqldump') ?: 'mysqldump';
         $dump_cmd_base[] = '--max_allowed_packet=' . $database_config['max_allowed_packet'];
         $dump_cmd_base[] = '--no-tablespaces';
         $dump_cmd_base[] = '-h ' . $database_config['host'];
