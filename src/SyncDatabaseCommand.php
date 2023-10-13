@@ -18,8 +18,8 @@ class SyncDatabaseCommand extends Command
 {
     use ConfirmableTrait;
 
-    protected $delete_local_dump = true;
-    protected $default_database_config = [];
+    protected bool $delete_local_dump = true;
+    protected array $default_database_config = [];
 
     /**
      * The name and signature of the console command.
@@ -79,7 +79,7 @@ class SyncDatabaseCommand extends Command
             $import_cmd[] = '|';
         }
 
-        $import_cmd[] = 'mysql';
+        $import_cmd[] = Config::get('sync-database.bin.mysql', 'mysql');
         $import_cmd[] = '-h ' . $this->default_database_config['host'];
         if (array_key_exists('port', $this->default_database_config)) {
             $import_cmd[] = '-P ' . $this->default_database_config['port'];
@@ -162,7 +162,6 @@ class SyncDatabaseCommand extends Command
     {
         $database_config = Config::get('sync-database.database');
         $ssh_config = Config::get('sync-database.ssh');
-        $bin_config = Config::get('sync-database.bin');
 
         if (!isset($ssh_config['timeout'])) {
             $ssh_config['timeout'] = 300;
@@ -217,7 +216,7 @@ class SyncDatabaseCommand extends Command
 
         $dump_cmds = [];
         $dump_cmd_base = [];
-        $dump_cmd_base[] = $bin_config['mysqldump'] ?? 'mysqldump';
+        $dump_cmd_base[] =  Config::get('sync-database.bin.mysqldump', 'mysqldump');
         $dump_cmd_base[] = '--max_allowed_packet=' . $database_config['max_allowed_packet'];
         $dump_cmd_base[] = '--no-tablespaces';
         $dump_cmd_base[] = '-h ' . $database_config['host'];

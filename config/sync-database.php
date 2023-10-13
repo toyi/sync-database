@@ -5,9 +5,10 @@
     ],
 
     'bin' => [
-        'mysqldump' => 'mysqldump',
+        'mysql' => env('SYNC_BIN_MYSQL'),
+        'mysqldump' => env('SYNC_BIN_MYSQLDUMP'),
     ],
-    
+
     # Remote server configuration
     'ssh' => [
         'host' => env('SYNC_SSH_HOST'),
