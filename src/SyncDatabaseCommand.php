@@ -47,7 +47,7 @@ class SyncDatabaseCommand extends Command
      * @return int
      * @throws Exception
      */
-    public function handle()
+    public function handle(): int
     {
         if ($this->confirmToProceed() === false) {
             return 1;
@@ -140,7 +140,10 @@ class SyncDatabaseCommand extends Command
         return 0;
     }
 
-    protected function providedDump()
+    /**
+     * @throws Exception
+     */
+    protected function providedDump(): string
     {
         $this->delete_local_dump = $this->option('delete-local-dump', false);
 
@@ -158,7 +161,10 @@ class SyncDatabaseCommand extends Command
         return $dump_file;
     }
 
-    protected function remoteDump()
+    /**
+     * @throws Exception
+     */
+    protected function remoteDump(): string
     {
         $database_config = Config::get('sync-database.database');
         $ssh_config = Config::get('sync-database.ssh');
@@ -172,18 +178,15 @@ class SyncDatabaseCommand extends Command
         }
 
         if ($database_config['host'] == '' || $database_config['port'] == '' || $database_config['user'] == '' || $database_config['password'] == '') {
-            $this->error("Missing database configuration.");
-            return 1;
+            throw new Exception("Missing database configuration.");
         }
 
         if ($ssh_config['host'] == '' || $ssh_config['port'] == '' || $ssh_config['user'] == '' || ($ssh_config['password'] == '' && $ssh_config['key'] == '')) {
-            $this->error("Missing ssh configuration.");
-            return 1;
+            throw new Exception("Missing ssh configuration.");
         }
 
         if ($ssh_config['key'] != '' && file_exists($ssh_config['key']) === false) {
-            $this->error("SSH Key not found.");
-            return 1;
+            throw new Exception("SSH Key not found.");
         }
 
         $key = PublicKeyLoader::load(file_get_contents($ssh_config['key']));
@@ -194,13 +197,11 @@ class SyncDatabaseCommand extends Command
         $sftp_client->login($ssh_config['user'], $key);
 
         if ($ssh_client->isConnected() === false || $ssh_client->isAuthenticated() === false) {
-            $this->error("SSH connection cannot be established.");
-            return 1;
+            throw new Exception("SSH connection cannot be established.");
         }
 
         if ($sftp_client->isConnected() === false || $sftp_client->isAuthenticated() === false) {
-            $this->error("SFTP connection cannot be established.");
-            return 1;
+            throw new Exception("SFTP connection cannot be established.");
         }
 
         $tables_no_data = $this->option('tables-no-data') ?: $database_config['tables_no_data'];
@@ -281,7 +282,7 @@ class SyncDatabaseCommand extends Command
         return $dump_file_local;
     }
 
-    protected function dropAllTables()
+    protected function dropAllTables(): void
     {
         $schema_builder = DB::connection()->getSchemaBuilder();
         if (method_exists($schema_builder, 'dropAllTables')) {
