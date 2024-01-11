@@ -34,6 +34,7 @@ class SyncDatabaseCommand extends Command
     {--tables-no-data= : A comma separated list of tables. Only their structure will be dumped (no data)}
     {--dump-file= : Directly import the database from this file}
     {--delete-local-dump : Delete the local dump after the import is completed}
+    {--post-scripts : Execute the post sync scripts defined in the config file}
     ';
 
     /**
@@ -139,16 +140,18 @@ class SyncDatabaseCommand extends Command
             ]);
         }
 
-        $post_scripts = (array)Config::get('sync-database.post_scripts', []);
+        if ($this->option('post-scripts')) {
+            $post_scripts = (array)Config::get('sync-database.post_scripts', []);
 
-        foreach ($post_scripts as $script) {
-            if (!class_exists($script)) {
-                $this->error("Post script $script not found.");
-                continue;
+            foreach ($post_scripts as $script) {
+                if (!class_exists($script)) {
+                    $this->error("Post script $script not found.");
+                    continue;
+                }
+
+                $this->info("Executing post script $script");
+                Container::getInstance()->make($script)();
             }
-
-            $this->info("Executing post script $script");
-            Container::getInstance()->make($script)();
         }
 
         return 0;
