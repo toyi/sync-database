@@ -10,7 +10,8 @@
     ],
 
     'post_scripts' => [
-        //
+        'enabled' => env('SYNC_POST_SCRIPTS_ENABLED', false),
+        'scripts' => []
     ],
 
     # Remote server configuration
