@@ -4,8 +4,10 @@ namespace Toyi\SyncDatabase;
 
 use ByteUnits\Metric;
 use Exception;
+use Illuminate\Console\Application;
 use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
+use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -105,7 +107,7 @@ class SyncDatabaseCommand extends Command
             $lines = array_filter($lines, fn(string $line) => $line !== '');
             $buffer = $lines[0];
 
-            if(str_starts_with($buffer, 'mysql: [Warning] Using a password')){
+            if (str_starts_with($buffer, 'mysql: [Warning] Using a password')) {
                 return;
             }
 
@@ -114,7 +116,7 @@ class SyncDatabaseCommand extends Command
                 return;
             }
 
-            $bar->setProgress((int) $buffer);
+            $bar->setProgress((int)$buffer);
         });
 
         if (!$process->isSuccessful()) {
@@ -135,6 +137,18 @@ class SyncDatabaseCommand extends Command
             $this->call('migrate', [
                 '--step' => true
             ]);
+        }
+
+        $post_scripts = (array)Config::get('sync-database.post_scripts', []);
+
+        foreach ($post_scripts as $script) {
+            if (!class_exists($script)) {
+                $this->error("Post script $script not found.");
+                continue;
+            }
+
+            $this->info("Executing post script $script");
+            Container::getInstance()->make($script)();
         }
 
         return 0;
@@ -217,7 +231,7 @@ class SyncDatabaseCommand extends Command
 
         $dump_cmds = [];
         $dump_cmd_base = [];
-        $dump_cmd_base[] =  Config::get('sync-database.bin.mysqldump') ?: 'mysqldump';
+        $dump_cmd_base[] = Config::get('sync-database.bin.mysqldump') ?: 'mysqldump';
         $dump_cmd_base[] = '--max_allowed_packet=' . $database_config['max_allowed_packet'];
         $dump_cmd_base[] = '--no-tablespaces';
         $dump_cmd_base[] = '-h ' . $database_config['host'];
