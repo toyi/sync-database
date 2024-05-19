@@ -236,6 +236,7 @@ class SyncDatabaseCommand extends Command
         $dump_cmd_base[] = Config::get('sync-database.bin.mysqldump') ?: 'mysqldump';
         $dump_cmd_base[] = '--max_allowed_packet=' . $database_config['max_allowed_packet'];
         $dump_cmd_base[] = '--no-tablespaces';
+        $dump_cmd_base[] = '--single-transaction';
         $dump_cmd_base[] = '-h ' . $database_config['host'];
         $dump_cmd_base[] = '-P ' . $database_config['port'];
         $dump_cmd_base[] = '-u ' . $database_config['user'];
