@@ -58,7 +58,11 @@ class SyncDatabaseCommand extends Command
         $this->delete_local_dump = $this->option('delete-local-dump');
 
         $dump_file = $this->option('dump-file') ? $this->providedDump() : $this->remoteDump();
-        $this->default_database_config = Config::get('database.connections.' . DB::getDefaultConnection());
+        
+        $this->default_database_config = array_merge(
+            Config::get('database.connections.' . DB::getDefaultConnection()),
+            Config::get('sync-database.local-database', [])
+        );
 
         $this->dropAllTables();
 
