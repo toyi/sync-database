@@ -24,6 +24,15 @@
         'timeout' => env('SYNC_SSH_TIMEOUT', 300),
     ],
 
+    #Local database configuration override
+    'local-database' => [
+        'host' => env('SYNC_LOCAL_DATABASE_HOST'),
+        'port' => env('SYNC_LOCAL_DATABASE_PORT'),
+        'name' => env('SYNC_LOCAL_DATABASE_NAME'),
+        'user' => env('SYNC_LOCAL_DATABASE_USER'),
+        'password' => env('SYNC_LOCAL_DATABASE_PASSWORD'),
+    ],
+
     #Remote database configuration
     'database' => [
         'host' => env('SYNC_DATABASE_HOST', '127.0.0.1'),
