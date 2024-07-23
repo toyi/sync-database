@@ -9,6 +9,11 @@
         'mysqldump' => env('SYNC_BIN_MYSQLDUMP'),
     ],
 
+    'post_dump_scripts' => [
+        'enabled' => env('SYNC_POST_DUMP_SCRIPTS_ENABLED', false),
+        'scripts' => []
+    ],
+
     'post_scripts' => [
         'enabled' => env('SYNC_POST_SCRIPTS_ENABLED', false),
         'scripts' => []

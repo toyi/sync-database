@@ -58,11 +58,7 @@ class SyncDatabaseCommand extends Command
         $this->delete_local_dump = $this->option('delete-local-dump');
 
         $dump_file = $this->option('dump-file') ? $this->providedDump() : $this->remoteDump();
-        
-        $this->default_database_config = array_merge(
-            Config::get('database.connections.' . DB::getDefaultConnection()),
-            Config::get('sync-database.local-database', [])
-        );
+        $this->default_database_config = Config::get('database.connections.' . DB::getDefaultConnection());
 
         $this->dropAllTables();
 
@@ -299,6 +295,20 @@ class SyncDatabaseCommand extends Command
 
         exec("gzip -fd $dump_file_local_gz");
         $this->info("Dump extracted.");
+
+        if (Config::get('sync-database.post_dump_scripts.enabled', false)) {
+            $post_scripts = (array)Config::get('sync-database.post_dump_scripts.scripts', []);
+
+            foreach ($post_scripts as $script) {
+                if (!class_exists($script)) {
+                    $this->error("Post dump script $script not found.");
+                    continue;
+                }
+
+                $this->info("Executing post dump script $script");
+                Container::getInstance()->make($script)($dump_file_local);
+            }
+        }
 
         return $dump_file_local;
     }
