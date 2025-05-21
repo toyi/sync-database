@@ -7,6 +7,8 @@
     'bin' => [
         'mysql' => env('SYNC_BIN_MYSQL'),
         'mysqldump' => env('SYNC_BIN_MYSQLDUMP'),
+        'pg_dump' => env('SYNC_BIN_PG_DUMP'),
+        'pg_restore' => env('SYNC_BIN_PG_RESTORE'),
     ],
 
     'post_dump_scripts' => [
@@ -29,15 +31,6 @@
         'timeout' => env('SYNC_SSH_TIMEOUT', 300),
     ],
 
-    #Local database configuration override
-    'local-database' => [
-        'host' => env('SYNC_LOCAL_DATABASE_HOST'),
-        'port' => env('SYNC_LOCAL_DATABASE_PORT'),
-        'name' => env('SYNC_LOCAL_DATABASE_NAME'),
-        'user' => env('SYNC_LOCAL_DATABASE_USER'),
-        'password' => env('SYNC_LOCAL_DATABASE_PASSWORD'),
-    ],
-
     #Remote database configuration
     'database' => [
         'host' => env('SYNC_DATABASE_HOST', '127.0.0.1'),
@@ -45,7 +38,12 @@
         'name' => env('SYNC_DATABASE_NAME'),
         'user' => env('SYNC_DATABASE_USER'),
         'password' => env('SYNC_DATABASE_PASSWORD'),
-        'max_allowed_packet' => env('SYNC_DATABASE_MAX_ALLOWED_PACKET', '64M'),
-        'tables_no_data' => env('SYNC_TABLES_NO_DATA', ''),
+    ],
+
+    'dump_options' => [
+        'mysql' => [
+            'max_allowed_packet' => env('SYNC_DUMP_OPTIONS_MYSQL_MAX_ALLOWED_PACKET', '64M'),
+        ],
+        'pgsql' => []
     ]
 ];
