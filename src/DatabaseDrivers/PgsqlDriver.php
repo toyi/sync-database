@@ -7,8 +7,6 @@ class PgsqlDriver extends DatabaseDriverAbstract
 {
     public function makeImportCmd(string $dump_file): string
     {
-        $basename = Str::of($dump_file)->basename($dump_file);
-
         $cmd = [];
         $cmd[] = Config::get('sync-database.bin.pg_restore') ?: 'pg_restore';
         $cmd[] = '--no-owner';
