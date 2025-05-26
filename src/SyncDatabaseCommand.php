@@ -81,12 +81,13 @@ class SyncDatabaseCommand extends Command
 
         $import_cmd = $this->driver->makeImportCmd($dump_file);
 
-        $process = new Process(['bash', '-c', $import_cmd]);
+        $process = new Process(['sh', '-c', $import_cmd]);
         $process->setTimeout(null);
         $process->run();
 
         if (!$process->isSuccessful()) {
             $this->error("There was an error during the import.");
+            $this->error($process->getErrorOutput());
             return Command::FAILURE;
         }
 
