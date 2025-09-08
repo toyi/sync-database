@@ -6,8 +6,18 @@ class MysqlDriver extends DatabaseDriverAbstract
 {
     public function makeImportCmd(string $dump_file): string
     {
+        $mysql_bin = Config::get('sync-database.bin.mysql', 'mysql');
+        $mysql_client_version = strtolower(shell_exec("$mysql_bin --version"));
+
         $cmd = [];
-        $cmd[] = Config::get('sync-database.bin.mysql', 'mysql');
+        $cmd[] = $mysql_bin;
+
+        if(str_contains($mysql_client_version, 'mariadb')){
+            $cmd[] = '--ssl-verify-server-cert=off';
+        }else if(str_contains($mysql_client_version, 'mysql')){
+            $cmd[] = '--ssl-mode=DISABLED';
+        }
+
         $cmd[] = '-h ' . $this->default_database_config['host'];
         if (array_key_exists('port', $this->default_database_config)) {
             $cmd[] = '-P ' . $this->default_database_config['port'];
