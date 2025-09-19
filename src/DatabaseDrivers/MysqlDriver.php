@@ -6,7 +6,9 @@ class MysqlDriver extends DatabaseDriverAbstract
 {
     public function makeImportCmd(string $dump_file): string
     {
-        $mysql_bin = Config::get('sync-database.bin.mysql', 'mysql');
+        $this->dump_options['max_allowed_packet'] ??= '256M';
+        $mysql_bin = Config::get('sync-database.bin.mysql') ?: 'mysql';
+
         $mysql_client_version = strtolower(shell_exec("$mysql_bin --version"));
 
         $cmd = [];
@@ -22,6 +24,7 @@ class MysqlDriver extends DatabaseDriverAbstract
         if (array_key_exists('port', $this->default_database_config)) {
             $cmd[] = '-P ' . $this->default_database_config['port'];
         }
+        $cmd[] = '--max_allowed_packet=' . $this->dump_options['max_allowed_packet'];
         $cmd[] = '-u ' . $this->default_database_config['username'];
         $cmd[] = '-p' . $this->default_database_config['password'];
         $cmd[] = $this->default_database_config['database'];
@@ -34,12 +37,12 @@ class MysqlDriver extends DatabaseDriverAbstract
 
     public function makeDumpCmd(string $dump_file_remote): string
     {
-        $this->dump_options['max_allowed_packet'] ??= '64M';
-        $this->dump_options['keep_definers'] ??= false;
+        $this->dump_options['max_allowed_packet'] ??= '256M';
+        $this->dump_options['remove_database_qualifier'] ??= null;
 
         $dump_cmd = [];
         $dump_cmd[] = Config::get('sync-database.bin.mysqldump') ?: 'mysqldump';
-        $dump_cmd[] = '--max_allowed_packet=' . $this->database_config['max_allowed_packet'];
+        $dump_cmd[] = '--max_allowed_packet=' . $this->dump_options['max_allowed_packet'];
         $dump_cmd[] = '--no-tablespaces';
         $dump_cmd[] = '--single-transaction';
         $dump_cmd[] = '-h ' . $this->database_config['host'];
@@ -48,8 +51,8 @@ class MysqlDriver extends DatabaseDriverAbstract
         $dump_cmd[] = '-p' . $this->database_config['password'];
         $dump_cmd[] = $this->database_config['name'];
 
-        if ($this->dump_options['keep_definers']) {
-            $dump_cmd[] = "| sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' ";
+        if ($qualifier = $this->dump_options['remove_database_qualifier']) {
+            $dump_cmd[] = "| sed -e 's/`$qualifier`\.//g' ";
         }
 
         $dump_cmd[] = '> ' . $dump_file_remote;

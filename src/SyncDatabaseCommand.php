@@ -36,6 +36,7 @@ class SyncDatabaseCommand extends Command
     {--no-migrations : Do not execute pending migrations.}
     {--dump-file= : Directly import the database from this file}
     {--delete-local-dump : Delete the local dump after the import is completed}
+    {--connection= : Connection to import the database to}
     ';
 
     /**
@@ -57,12 +58,18 @@ class SyncDatabaseCommand extends Command
             return 1;
         }
 
-        switch ($driver_name = DB::getDefaultConnection()) {
+        $default_connection = Config::get('database.default');
+        $connection = $this->option('connection') ?: $default_connection;
+        $no_migrations = $this->option('no-migrations') || $connection !== $default_connection;
+        $driver_name = Config::get("database.connections.{$connection}.driver");
+
+        switch ($driver_name) {
+            case 'mariadb':
             case 'mysql':
-                $this->driver = app(MysqlDriver::class);
+                $this->driver = app(MysqlDriver::class, ['connection' => $this->option('connection')]);
                 break;
             case 'pgsql':
-                $this->driver = app(PgsqlDriver::class);
+                $this->driver = app(PgsqlDriver::class, ['connection' => $this->option('connection')]);
                 break;
         }
 
@@ -75,7 +82,7 @@ class SyncDatabaseCommand extends Command
         $dump_file = $this->option('dump-file') ? $this->providedDump() : $this->remoteDump();
 
         $this->info("Dropping local database...");
-        Artisan::call('db:wipe', ['--quiet' => true, '--force' => true]);;
+        Artisan::call('db:wipe', ['--quiet' => true, '--force' => true, '--database' => $connection]);;
 
         $this->info("Importing...");
 
@@ -96,7 +103,7 @@ class SyncDatabaseCommand extends Command
             $this->info("Local dump deleted.");
         }
 
-        if ($this->option('no-migrations') !== true) {
+        if ($no_migrations !== true) {
             $this->call('migrate', [
                 '--step' => true
             ]);

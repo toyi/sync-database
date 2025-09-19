@@ -1,7 +1,7 @@
 <?php return [
     'auto' => [
-      'enabled' => env('SYNC_AUTO', false),
-      'at' => env('SYNC_AUTO_AT', '06:10')
+        'enabled' => env('SYNC_AUTO', false),
+        'at' => env('SYNC_AUTO_AT', '06:10')
     ],
 
     'bin' => [
@@ -41,8 +41,12 @@
     ],
 
     'dump_options' => [
+        'mariadb' => [
+            'remove_database_qualifier' => env('SYNC_REMOVE_DATABASE_QUALIFIER', null),
+        ],
         'mysql' => [
             'max_allowed_packet' => env('SYNC_DUMP_OPTIONS_MYSQL_MAX_ALLOWED_PACKET', '64M'),
+            'remove_database_qualifier' => env('SYNC_REMOVE_DATABASE_QUALIFIER', null)
         ],
         'pgsql' => []
     ]
