@@ -24,6 +24,7 @@ class SyncDatabaseCommand extends Command
 {
     use ConfirmableTrait;
 
+    protected bool $debug = true;
     protected bool $delete_local_dump = true;
     protected DatabaseDriverAbstract|null $driver = null;
 
@@ -58,6 +59,7 @@ class SyncDatabaseCommand extends Command
             return 1;
         }
 
+        $this->debug = Config::get('sync-database.debug');
         $default_connection = Config::get('database.default');
         $connection = $this->option('connection') ?: $default_connection;
         $no_migrations = $this->option('no-migrations') || $connection !== $default_connection;
@@ -87,6 +89,11 @@ class SyncDatabaseCommand extends Command
         $this->info("Importing...");
 
         $import_cmd = $this->driver->makeImportCmd($dump_file);
+
+        if($this->debug){
+            $this->info('Import command:');
+            $this->info($import_cmd);
+        }
 
         $process = new Process(['sh', '-c', $import_cmd]);
         $process->setTimeout(null);
@@ -192,6 +199,11 @@ class SyncDatabaseCommand extends Command
         $dump_file_local_gz = $dump_file_local . '.gz';
 
         $dump_cmd = $this->driver->makeDumpCmd($dump_file_remote);
+
+        if($this->debug){
+            $this->info('Import command:');
+            $this->info($dump_cmd);
+        }
 
         $this->info("Dumping...");
         $ssh_client->exec($dump_cmd);

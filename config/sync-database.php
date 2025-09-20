@@ -1,4 +1,5 @@
 <?php return [
+    'debug' => env('SYNC_DEBUG', false),
     'auto' => [
         'enabled' => env('SYNC_AUTO', false),
         'at' => env('SYNC_AUTO_AT', '06:10')

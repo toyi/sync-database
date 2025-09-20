@@ -30,7 +30,6 @@ class MysqlDriver extends DatabaseDriverAbstract
         $cmd[] = $this->default_database_config['database'];
         $cmd[] = '<';
         $cmd[] = $dump_file;
-        $cmd[] = '2>&1';
 
         return implode(' ', $cmd);
     }

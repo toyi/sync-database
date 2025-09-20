@@ -19,7 +19,6 @@ class PgsqlDriver extends DatabaseDriverAbstract
             );
         $cmd[] = '<';
         $cmd[] = $dump_file;
-        $cmd[] = '2>&1';
 
         return implode(' ', $cmd);
     }

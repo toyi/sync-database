@@ -7,12 +7,13 @@ abstract class DatabaseDriverAbstract
 {
     protected array $default_database_config;
 
-    public function __construct()
+    public function __construct(string $connection = null)
     {
-        $driver_name = DB::getDefaultConnection();
-        $this->default_database_config = Config::get("database.connections.$driver_name");
+        $connection_name = $connection ?: DB::getDefaultConnection();
+        $driver = Config::get("database.connections.$connection_name.driver");
+        $this->default_database_config = Config::get("database.connections.$connection_name");
         $this->database_config = Config::get('sync-database.database');
-        $this->dump_options = Config::get("sync-database.dump_options.$driver_name");
+        $this->dump_options = Config::get("sync-database.dump_options.$driver");
     }
 
     abstract public function makeImportCmd(string $dump_file): string;
