@@ -6,8 +6,10 @@ use Illuminate\Support\Facades\DB;
 abstract class DatabaseDriverAbstract
 {
     protected array $default_database_config;
+    protected array $database_config;
+    protected array $dump_options;
 
-    public function __construct(string $connection = null)
+    public function __construct(?string $connection = null)
     {
         $connection_name = $connection ?: DB::getDefaultConnection();
         $driver = Config::get("database.connections.$connection_name.driver");
