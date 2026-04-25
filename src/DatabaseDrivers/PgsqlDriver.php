@@ -9,6 +9,8 @@ class PgsqlDriver extends DatabaseDriverAbstract
     {
         $cmd = [];
         $cmd[] = Config::get('sync-database.bin.pg_restore') ?: 'pg_restore';
+        $cmd[] = '--clean';
+        $cmd[] = '--if-exists';
         $cmd[] = '--no-owner';
         $cmd[] = '--dbname ' . $this->makeDbName(
                 user: $this->default_database_config['username'],
